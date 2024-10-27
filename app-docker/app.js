@@ -1,59 +1,54 @@
-require('dotenv').config();
-
 const express = require('express');
 const mongoose = require('mongoose');
-const User = require('./models/User'); // Import the User model
+const bodyParser = require('body-parser');
+
 const app = express();
+app.use(bodyParser.json());
+app.use(express.static('views'));
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+// MongoDB connection
+mongoose.connect('mongodb://mongo:27017/nomcomboDB', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log("Connected to MongoDB"))
+.catch((error) => console.error("MongoDB connection error:", error));
 
-// Use environment variable for MongoDB connection string
-const mongoURI = process.env.MONGO_URI;
-
-mongoose.connect(mongoURI)
-  .then(() => console.log('MongoDB connected...'))
-  .catch(err => console.log(err));
-
-app.set('view engine', 'ejs');
-
-app.get('/', (req, res) => {
-  res.render('index', { codes: [], username: '' });
+// Schema and Model
+const ComboSchema = new mongoose.Schema({
+    username: String,
+    length: Number,
+    count: Number,
+    combinations: [String]
 });
 
-app.post('/generate', async (req, res) => {
-  const length = parseInt(req.body.length);
-  const combinations = parseInt(req.body.combinations);
-  const username = req.body.username;
+const Combo = mongoose.model('Combo', ComboSchema);
 
-  const codes = [];
-  for (let i = 0; i < combinations; i++) {
-    // Generate numeric codes
-    let code = '';
-    for (let j = 0; j < length; j++) {
-      code += Math.floor(Math.random() * 10); // Generate a digit (0-9)
+// Generate random combinations
+function generateRandomCombos(length, count) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const combos = [];
+
+    for (let i = 0; i < count; i++) {
+        let str = '';
+        for (let j = 0; j < length; j++) {
+            str += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        combos.push(str);
     }
-    codes.push(code);
-  }
 
-  // Check if user already exists in the database
-  let user = await User.findOne({ username });
+    return combos;
+}
 
-  if (user) {
-    // If the user exists, add the new codes to their existing codes
-    user.codes.push(...codes);
-  } else {
-    // If the user doesn't exist, create a new user
-    user = new User({ username, codes });
-  }
+// API endpoint
+app.post('/generate', async (req, res) => {
+    const { username, length, count } = req.body;
+    const combinations = generateRandomCombos(length, count);
 
-  // Save the user document
-  await user.save();
+    const newCombo = new Combo({ username, length, count, combinations });
+    await newCombo.save();
 
-  res.render('index', { codes, username });
+    res.json({ message: "Combinations generated and saved successfully!" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+const PORT = 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

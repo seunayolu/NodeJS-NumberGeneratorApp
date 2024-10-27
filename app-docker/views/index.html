@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NomCombo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+
+        .container {
+            max-width: 400px;
+            background-color: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            text-align: left;
+            color: #555;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            margin-top: 0.3rem;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.8rem;
+            margin-top: 1rem;
+            font-size: 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-generate {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .btn-clear {
+            background-color: #6c757d;
+            color: #fff;
+        }
+
+        .btn-generate:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-clear:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NomCombo</h1>
+        <form id="comboForm">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="length">String Length</label>
+            <input type="number" id="length" name="length" required>
+
+            <label for="count">Number of Combinations</label>
+            <input type="number" id="count" name="count" required>
+
+            <button type="button" class="btn btn-generate" onclick="generateCombos()">Generate</button>
+            <button type="button" class="btn btn-clear" onclick="clearResults()">Clear Results</button>
+        </form>
+    </div>
+
+    <script>
+        async function generateCombos() {
+            const username = document.getElementById("username").value;
+            const length = document.getElementById("length").value;
+            const count = document.getElementById("count").value;
+
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, length, count })
+            });
+
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        function clearResults() {
+            document.getElementById("username").value = '';
+            document.getElementById("length").value = '';
+            document.getElementById("count").value = '';
+        }
+    </script>
+</body>
+</html>
