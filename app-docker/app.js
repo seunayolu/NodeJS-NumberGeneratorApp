@@ -6,12 +6,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use(express.static('views'));
 
-// MongoDB connection
-mongoose.connect('mongodb://mongo:27017/nomcomboDB', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => console.log("Connected to MongoDB"))
-.catch((error) => console.error("MongoDB connection error:", error));
+mongoose.connect('mongodb://mongo:27017/nomcomboDB')
+    .then(() => console.log("Connected to MongoDB"))
+    .catch((error) => console.error("MongoDB connection error:", error));
 
 // Schema and Model
 const ComboSchema = new mongoose.Schema({
@@ -39,15 +36,37 @@ function generateRandomCombos(length, count) {
     return combos;
 }
 
-// API endpoint
+// API endpoint to generate or update combinations for a user
 app.post('/generate', async (req, res) => {
     const { username, length, count } = req.body;
-    const combinations = generateRandomCombos(length, count);
 
-    const newCombo = new Combo({ username, length, count, combinations });
-    await newCombo.save();
+    // Generate new combinations
+    const newCombinations = generateRandomCombos(length, count);
 
-    res.json({ message: "Combinations generated and saved successfully!" });
+    try {
+        // Find the user's record
+        let userCombo = await Combo.findOne({ username });
+
+        if (userCombo) {
+            // User exists, update their record by adding new combinations
+            await Combo.updateOne(
+                { username },
+                { 
+                    $push: { combinations: { $each: newCombinations } },
+                    $set: { length, count } // Update length and count to the latest values
+                }
+            );
+            res.json({ message: "Combinations updated successfully!" });
+        } else {
+            // User does not exist, create a new record
+            const newCombo = new Combo({ username, length, count, combinations: newCombinations });
+            await newCombo.save();
+            res.json({ message: "Combinations generated and saved successfully!" });
+        }
+    } catch (error) {
+        console.error("Error saving combinations:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
 const PORT = 3000;
