@@ -1,0 +1,30 @@
+services:
+  numgen:
+    build: .
+    image: node-numgen:v1
+    container_name: numgen
+    ports:
+      - 3000:3000
+    depends_on:
+      - mongo
+  
+  mongo:
+    image: mongo
+    container_name: mongo
+    volumes:
+      - mongo:/data/db
+    restart: always
+  
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongo
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+
+volumes:
+  mongo:
+    
